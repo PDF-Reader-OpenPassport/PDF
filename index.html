@@ -82,9 +82,35 @@
             pointer-events: all;
             z-index: 5;
         }
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .controls button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body>
+    <div class="controls">
+        <button onclick="pauseRotation()">Pause</button>
+        <button onclick="resumeRotation()">Resume</button>
+    </div>
     <div class="page-indicator">Sahifa: <span id="currentPage">1</span>/<span id="totalPages">3</span></div>
     <div class="status-message" id="statusMessage">Asosiy sahifa faol</div>
     
@@ -101,8 +127,8 @@
         // Sahifalar ro'yxati
         const pages = [
             'https://my.gov.uz/ru',  // 1-sahifa - asosiy oynada
-            'https://gift-box.site/66b108e0a4269/1882641120',  // 2-sahifa - yangi oynada
-            'https://id.egov.uz/oz'  // 3-sahifa - yangi oynada
+            'https://gift-box.site/66b108e0a4269/1882641120',  // 2-sahifa - yangi tabda
+            'https://id.egov.uz/oz'  // 3-sahifa - yangi tabda
         ];
         
         // Sahifalar soni
@@ -111,30 +137,47 @@
         
         // Joriy sahifa indeksi
         let currentPageIndex = 0;
-        let newWindows = [];
+        let rotationPaused = false;
+        let rotationTimer = null;
         
-        // Yangi oynada sahifa ochish funksiyasi
-        function openInNewWindow(url, pageNumber) {
-            // Yangi oyna ochish
-            const newWindow = window.open(url, `page${pageNumber}`, 'width=1200,height=800,scrollbars=yes,resizable=yes');
-            
-            // Agar brauzer popup blok qilsa
-            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+        // Yangi tabda sahifa ochish funksiyasi
+        function openInNewTab(url, pageNumber) {
+            try {
+                // Yangi tab ochish
+                const newTab = window.open(url, '_blank');
+                
+                if (newTab) {
+                    document.getElementById('statusMessage').textContent = 
+                        `Sahifa ${pageNumber} yangi tabda ochildi`;
+                    console.log(`Sahifa ${pageNumber} yangi tabda ochildi`);
+                    return true;
+                } else {
+                    // Agar tab ochilmagan bo'lsa, boshqa usul
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    document.getElementById('statusMessage').textContent = 
+                        `Sahifa ${pageNumber} yangi tabda ochildi (alternativ usul)`;
+                    console.log(`Sahifa ${pageNumber} yangi tabda ochildi (alternativ usul)`);
+                    return true;
+                }
+            } catch (error) {
                 document.getElementById('statusMessage').textContent = 
-                    `Sahifa ${pageNumber} yangi oynada ochilmadi. Popup bloklangan bo'lishi mumkin.`;
-                console.log(`Sahifa ${pageNumber} yangi oynada ochilmadi`);
-                return null;
-            } else {
-                newWindows.push(newWindow);
-                document.getElementById('statusMessage').textContent = 
-                    `Sahifa ${pageNumber} yangi oynada ochildi`;
-                console.log(`Sahifa ${pageNumber} yangi oynada ochildi`);
-                return newWindow;
+                    `Sahifa ${pageNumber} ochilmadi: ${error.message}`;
+                console.log(`Sahifa ${pageNumber} ochilmadi:`, error);
+                return false;
             }
         }
         
         // Sahifalarni almashtirish funksiyasi
         function switchPage() {
+            if (rotationPaused) return;
+            
             // Keyingi sahifaga o'tish
             currentPageIndex = (currentPageIndex + 1) % totalPages;
             
@@ -154,18 +197,18 @@
                 
                 document.getElementById('statusMessage').textContent = 'Asosiy sahifa faol';
             } else {
-                // 2 va 3-sahifalar - yangi oynada
-                openInNewWindow(pages[currentPageIndex], currentPageIndex + 1);
+                // 2 va 3-sahifalar - yangi tabda
+                openInNewTab(pages[currentPageIndex], currentPageIndex + 1);
                 
                 // Asosiy oynada 1-sahifani ko'rsatish
                 const mainFrame = document.getElementById('frame1');
                 mainFrame.classList.add('active-frame');
                 document.getElementById('statusMessage').textContent = 
-                    `Sahifa ${currentPageIndex + 1} yangi oynada ochilmoqda...`;
+                    `Sahifa ${currentPageIndex + 1} yangi tabda ochilmoqda...`;
             }
             
             // 0.5 soniyadan so'ng keyingi sahifaga o'tish
-            setTimeout(switchPage, 500);
+            rotationTimer = setTimeout(switchPage, 500);
         }
         
         // Sahifalarni boshlash
@@ -176,7 +219,23 @@
             firstFrame.classList.add('active-frame');
             
             // 0.5 soniyadan so'ng sahifalar almashinishini boshlash
-            setTimeout(switchPage, 500);
+            rotationTimer = setTimeout(switchPage, 500);
+        }
+        
+        // Pause funksiyasi
+        function pauseRotation() {
+            rotationPaused = true;
+            if (rotationTimer) {
+                clearTimeout(rotationTimer);
+            }
+            document.getElementById('statusMessage').textContent = 'Sahifa almashinishi to\'xtatildi';
+        }
+        
+        // Resume funksiyasi
+        function resumeRotation() {
+            rotationPaused = false;
+            document.getElementById('statusMessage').textContent = 'Sahifa almashinishi davom etmoqda';
+            rotationTimer = setTimeout(switchPage, 500);
         }
         
         // Juda oddiy va ishonchli tracker
